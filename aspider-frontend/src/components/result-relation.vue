@@ -11,8 +11,8 @@
                 <p>{{mimnumber}}</p>
               </el-row>
               <el-row>
-                <el-table :data="page_disease_info" style="width:100%">
-                  <el-table-column prop="source" label="disease">
+                <el-table :data="page_disease_info" style="width:100%" fit=true>
+                  <el-table-column prop="source" label="disease" min-width="100">
                     <template slot-scope="scope">
 
                       <el-popover trigger="hover" placement="top">
@@ -25,7 +25,7 @@
                       </el-popover>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="target" label="target">
+                  <el-table-column prop="target" label="target" min-width="100">
                     <template slot-scope="scope">
                       <el-popover trigger="hover" placement="top">
                         <p>mimnumber: {{ scope.row.target.mimnumber }}</p>
@@ -37,11 +37,12 @@
                       </el-popover>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="path" label="path">
+                  <el-table-column prop="path" label="path"  min-width="100">
                   </el-table-column>
-                  <el-table-column label="operation">
+                  <el-table-column label="operation" min-width="200">
                     <template slot-scope="scope">
-                      <el-button size="mini" type="primary" @click="handleView(scope.$index, scope.row)">view</el-button>
+                      <el-button size="mini" type="primary" @click="handleView(scope.$index, scope.row)">View</el-button>
+                      <el-button size="mini" type="info" @click="handleAdd(scope.$index, scope.row)">Add</el-button>
                       <el-button size="mini" type="danger" @click="handleRemove(scope.$index, scope.row)">remove</el-button>
                     </template>
                   </el-table-column>
@@ -109,12 +110,27 @@ export default {
   },
   methods: {
     handleView(index, row) {
+      this.request_params = [];
+      let url = "/disease/link";
+      this.request_params.push(row.source.mimnumber);
+      this.request_params.push(row.target.mimnumber);
+      this.axios
+        .post(url, {
+          params: this.request_params
+        })
+        .then(response => {
+          this.setGraph(response.data.nodes, response.data.links);
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    handleAdd(index, row) {
       let url = "/disease/link";
       if (this.request_params.indexOf(row.source.mimnumber) == -1)
         this.request_params.push(row.source.mimnumber);
       if (this.request_params.indexOf(row.target.mimnumber) == -1)
         this.request_params.push(row.target.mimnumber);
-
       this.axios
         .post(url, {
           params: this.request_params
