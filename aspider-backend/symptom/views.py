@@ -92,6 +92,7 @@ def get_disease_list(request):
 
         # 统计发病部位数量并排序，取top5
         position = [row[0]['name'] for row in result.rows]
+        item['allPosition'] = position
         positions.extend(position)
 
         ss = Series(position).value_counts()[0:5]

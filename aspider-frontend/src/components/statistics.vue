@@ -34,22 +34,22 @@ export default {
   },
   components: { "vue-loading": vueLoading },
   watch: {
+    search_type1(val) {
+      this.search_type = val;
+    },
     search_text1(val) {
       this.search_text = val;
       this.setPie(val);
-    },
-    search_type1(val){
-      this.search_type =val;
     }
+    
   },
   methods: {
     setPie: function(val) {
-      console.log("set pie");
       let url = "/" + this.search_type + "/statistics";
       if (this.search_type == "") {
         url = "/gene/statistics";
       }
-      console.log("pie:"+url)
+      console.log("set pie" + url);
 
       let demo = val;
       let params = [];
@@ -65,7 +65,7 @@ export default {
           this.loading = false;
           value11 = response.data.inheris.ar;
           value22 = response.data.inheris.ad;
-      
+
           this.pie = {
             title: {
               text: "遗传方式统计信息"
@@ -193,10 +193,10 @@ export default {
         }
       ]
     };
-   
+
     this.search_text = this.$route.params.search_text;
     this.search_type = this.$route.params.search_type;
-    this.setPie(this.search_text );
+    this.setPie(this.search_text);
   },
   computed: {
     search_text1() {

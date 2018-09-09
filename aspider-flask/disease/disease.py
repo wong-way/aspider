@@ -1,5 +1,4 @@
-from disease.functions import get_graph
-from disease.functions import get_detail
+from disease.functions import *
 from tools import utils
 from flask import Blueprint, request
 
@@ -40,6 +39,18 @@ def graph():
     # 获取 json 数据
     req_params = request.get_json()
     return get_graph(req_params)
+
+
+@disease_bp.route('/link', methods=['POST'])
+def link():
+    req_params = request.get_json()
+    return get_link(req_params)
+
+
+@disease_bp.route('/top5item', methods=['POST'])
+def top100_item():
+    req_params = request.get_json()
+    return get_top5item(req_params)
 
 
 @disease_bp.route('/detail', methods=['POST'])

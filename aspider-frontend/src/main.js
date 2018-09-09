@@ -31,7 +31,7 @@ Vue.prototype.axios = axios
 Vue.config.productionTip = false
 
 // 开发用，local dev server 接口
-axios.defaults.baseURL = 'http://127.0.0.1:8081/'
+axios.defaults.baseURL = 'http://127.0.0.1:5000/'
 
 // 部署用，remote server 接口
 // axios.defaults.baseURL = 'http://############/'

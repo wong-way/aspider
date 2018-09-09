@@ -11,7 +11,7 @@
                 <p>{{mimnumber}}</p>
               </el-row>
               <el-row>
-                <el-table :data="page_disease_info" style="width:100%" fit=true>
+                <el-table :data="page_disease_info" style="width:100%" :fit=true>
                   <el-table-column prop="source" label="disease" min-width="100">
                     <template slot-scope="scope">
 
@@ -37,7 +37,7 @@
                       </el-popover>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="path" label="path"  min-width="100">
+                  <el-table-column prop="path" label="path" min-width="100">
                   </el-table-column>
                   <el-table-column label="operation" min-width="200">
                     <template slot-scope="scope">
@@ -172,12 +172,16 @@ export default {
       let tmpNodes = [];
       nodes.forEach(element => {
         let node = {};
-        if (element.value == "disease") {
+        if (element.name.indexOf(this.mimnumber) != -1) {
           node = {
             name: element.name,
             symbolSize: 25,
             draggable: true,
             category: 0,
+            force: {
+              gravity: 1
+            },
+         
             itemStyle: {
               normal: {
                 color: "#c23531"
@@ -185,18 +189,39 @@ export default {
             }
           };
         } else {
-          node = {
-            name: element.name,
-            symbolSize: 15,
-            draggable: true,
-            category: 1,
-            itemStyle: {
-              normal: {
-                color: "#2f4554"
+          if (element.value == "disease") {
+            node = {
+              name: element.name,
+              symbolSize: 25,
+              draggable: true,
+              category: 0,
+              force: {
+                gravity: 0.5
+              },
+              itemStyle: {
+                normal: {
+                  color: "#c23531"
+                }
               }
-            }
-          };
+            };
+          } else {
+            node = {
+              name: element.name,
+              symbolSize: 15,
+              draggable: true,
+              category: 1,
+              force: {
+                gravity: 0.5
+              },
+              itemStyle: {
+                normal: {
+                  color: "#2f4554"
+                }
+              }
+            };
+          }
         }
+
         tmpNodes.push(node);
       });
 
@@ -229,7 +254,7 @@ export default {
             layout: "force",
             force: {
               repulsion: 200,
-              edgeLength: 200
+              edgeLength: [100, 300]
             },
             symbolSize: 5,
             roam: true,

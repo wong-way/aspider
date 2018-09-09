@@ -8,7 +8,7 @@
               <el-option v-for="item in search_options" :key="item.value" :label="item.label" :value="item.value">
               </el-option>
             </el-select>
-            <el-button slot="append" icon="el-icon-search" v-on:click="search"></el-button>
+            <el-button slot="append" icon="el-icon-search" v-on:click="handleClickSearchButtion"></el-button>
           </el-input>
         </div>
       </el-col>
@@ -40,7 +40,7 @@
       <el-col :span="22" :offset="1">
         <el-tabs v-model="activeTab" type="card">
           <el-tab-pane label="Information Summary" name="first">
-            <el-card  style="margin-top: 15px;" >
+            <el-card style="margin-top: 15px;">
               <el-checkbox :indeterminate="isIndeterminatePos" v-model="checkAllPos" @change="handleCheckAllPosChange">Postions</el-checkbox>
               <div style="margin: 15px 0;"></div>
               <el-checkbox-group v-model="checkedPositions" @change="handleCheckedPosChange">
@@ -53,7 +53,7 @@
                 <el-checkbox v-for="i in inheriOptions" :label="i" :key="i">{{i}}</el-checkbox>
               </el-checkbox-group>
             </el-card>
-            <el-card  style="margin-top: 15px;" >
+            <el-card style="margin-top: 15px;">
               <el-row :butter="20">
                 <el-col :span="10">
                   <result-list ref="item" :listdata="listData" :posdata="posData"></result-list>
@@ -1112,8 +1112,6 @@ export default {
 
   methods: {
     doSearch() {
-      this.$store.state.search_text = this.search_text;
-      this.$store.state.search_type = this.search_type;
       this.loading = true;
       let demo = "SLC52A3";
       let params = [];
@@ -1155,22 +1153,9 @@ export default {
           // this.currentPageData = this.selectedData.slice(0, this.pageSize);
           // this.loading = false;
         });
-        
-   
-    
+
       this.$route.params.search_text = this.search_text;
       this.$route.params.search_type = this.search_type;
-    },
-    search(){
-         this.$router.push(
-        {
-          name: 'statistics',
-          params: {
-            search_type: this.search_type,
-            search_text: this.search_text
-          }
-        }
-      )
     },
     handleCheckAllPosChange(val) {
       this.checkedPositions = val ? this.positionOptions : [];
@@ -1190,7 +1175,6 @@ export default {
       this.isIndeterminatePos =
         checkedCount > 0 && checkedCount < this.positionOptions.length;
       this.$refs.item.$data.posOptions = this.checkedPositions;
-
       this.$refs.item.setCondition();
     },
     handleCheckedInheriChange(value) {
@@ -1200,14 +1184,24 @@ export default {
         checkedCount > 0 && checkedCount < this.inheriOptions.length;
       this.$refs.item.$data.inheriOptions = this.checkedInheris;
       this.$refs.item.setCondition();
+    },
+    handleClickSearchButtion() {
+      this.$store.state.search_text = this.search_text;
+      this.$store.state.search_type = this.search_type;
+      console.log(this.$store.state.search_text);
+      console.log(this.$store.state.search_type);
+      this.doSearch();
     }
   },
 
   created() {
     this.search_text = this.$route.params.search_text;
     this.search_type = this.$route.params.search_type;
-
+    console.log("created");
     this.doSearch();
+  },
+  updated() {
+    console.log("udpate");
   }
 };
 </script>

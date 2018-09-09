@@ -92,6 +92,7 @@ def get_disease_list(request):
             position = [row[0]['name'] for row in result.rows]
         else:
             position = []
+        item['allPosition'] = position
         if len(position) > 0:
             positions.extend(position)
 
