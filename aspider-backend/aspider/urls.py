@@ -26,4 +26,5 @@ urlpatterns = [
     url(r'^disease/', include('disease.urls')),
     url(r'^symptom/', include('symptom.urls')),
     url(r'^api/', include('api.urls')),
+    url(r'^common/', include('common.urls'))
 ]

@@ -10,7 +10,7 @@ from pandas import DataFrame, Series
 from django.http import HttpResponse
 from tools.neo4j import get_db, labels
 from django.views.decorators.csrf import csrf_exempt
-
+import datetime
 
 # 用户输入相关症状关键词，返回与关键词有关的症状
 @csrf_exempt
@@ -144,11 +144,13 @@ def get_disease_list2(request):
         result = gdb.query(q=query, data_contents=True)
         inheri = result.rows[0][2]['name']
         position = [row[1]['name'] for row in result.rows][0:5]
+        all_position = [row[1]['name'] for row in result.rows]
         item['inheritance'] = inheri
         item['position'] = position
         for row in result.rows:
             count += row[0]
         item['symptomCount'] = count
+        item['allPosition'] = all_position
         items.append(item)
 
     positions = set()
@@ -169,7 +171,6 @@ def get_disease_list2(request):
     response_data['inheris'] = list(inheris)
     response = HttpResponse(json.dumps(response_data))
     return response
-
 
 
 # 用户输入相关基因关键词，返回与关键词有关统计信息
@@ -253,21 +254,37 @@ def links(request):
     response = HttpResponse(json.dumps(data))
     return response
 
-
 # 间接查询，查询相关的
 def indirect_search(name, keywords, type, depth=2):
-    # 根据关键词生成正则表达式
-    reg = '.*|.*'.join(keywords)
-    reg = '\'.*' + reg + '.*\''
     data = []
     # 生成Cypher语句，并进行查找
     gdb = get_db()
+
+    # MARK:: TEST
+    time_stamp = datetime.datetime.now()
+    print('Indirect Query Start: ' + time_stamp.strftime('%H:%M:%S'))
+
+    # 根据关键词生成 CONTAINS 子句
+    phase = 'WHERE '
+    for i, keyword in enumerate(keywords):
+        if i == 0:
+            phase += 'node.' + labels[name].key_prop + ' CONTAINS \'' + keyword + '\''
+        else:
+            phase += ' OR node.' + labels[name].key_prop + ' CONTAINS \'' + keyword + '\''
+
+    # 构造查询语句
     query = 'MATCH(node:' + labels[name].label + ')' + '-[*1..' + str(
-        depth) + ']-' + '(result:' + type + ')' + ' WHERE node.' + labels[
-                name].key_prop + ' =~ ' + reg + ' RETURN result'
+        depth) + ']-' + '(result:' + type + ') ' + phase + ' RETURN result'
+
+    print(query)
 
     # -------------在下面这条语句可以设置返回的数据类型，包括是否返回关系等----------------
     result = gdb.query(q=query, data_contents=True)
+
+    # MARK:: TEST
+    time_stamp = datetime.datetime.now()
+    print('Indirect Query Stop: ' + time_stamp.strftime('%H:%M:%S'))
+
     if len(result) > 0:
         # 将查找到的数据整理为 Pandas 的 DataFrame
         data = [row[0] for row in result.rows]
@@ -276,13 +293,19 @@ def indirect_search(name, keywords, type, depth=2):
 
 
 def direct_search(name, keywords):
-    # 根据关键词生成正则表达式
-    reg = '.*|.*'.join(keywords)
-    reg = '\'.*' + reg + '.*\''
 
     # 生成Cypher语句，并进行查找
     gdb = get_db()
-    query = 'MATCH(node:' + labels[name].label + ') WHERE node.' + labels[name].key_prop + ' =~ ' + reg + ' RETURN node'
+    phase = 'WHERE '
+    for i, keyword in enumerate(keywords):
+        if i == 0:
+            phase += 'node.' + labels[name].key_prop + ' CONTAINS \'' + keyword + '\''
+        else:
+            phase += ' OR node.' + labels[name].key_prop + ' CONTAINS \'' + keyword + '\''
+
+    query = 'MATCH(node:' + labels[name].label + ') ' + phase + ' RETURN node'
+
+    print(query)
 
     # -------------在下面这条语句可以设置返回的数据类型，包括是否返回关系等----------------
     result = gdb.query(q=query, data_contents=True)
@@ -290,3 +313,4 @@ def direct_search(name, keywords):
     # 将查找到的数据整理为 Pandas 的 DataFrame
     data = [row[0] for row in result.rows]
     return data
+

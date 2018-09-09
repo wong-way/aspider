@@ -3,7 +3,7 @@
       <el-row justify="end" type="flex" align="middle">
         <transition name="slide">
           <div id="search-input" v-show="display">
-            <el-col :span="8">
+            <el-col :span="6">
               <div class="select">
                 <el-select v-model="search_type" placeholder="Type" size="mini">
                   <el-option
@@ -15,7 +15,7 @@
                 </el-select>
               </div>
             </el-col>
-            <el-col :span=15 style="padding-top:4px;">
+            <el-col :span="18" style="padding-top:4px;">
               <input placeholder="Enter your search term..." v-model="search_text">
             </el-col>
           </div>
@@ -101,7 +101,8 @@ export default {
 
 .search {
   border: none;
-  width: 400px;
+  width: 500px;
+  height: 40px;
 }
 
 .search input {
@@ -121,7 +122,7 @@ export default {
   outline: none;
   border: none;
   width: 60px;
-  height: 50px;
+  height: 40px;
   background: #2d8cf0;
   color: white;
   font-size: 16px;

@@ -17,8 +17,10 @@ urlpatterns = [
     url(r'^list', views.get_disease_list),
     url(r'^newlist', views.get_disease_list2),
     url(r'^statistics', views.get_statistics),
-
+    url(r'^top5item', views.get_top5item),
     url(r'^graph', views.get_graph),
-    url(r'^test',views.node_test)
+    url(r'^test', views.node_test),
+    url(r'^link', views.get_link_of_disease),
+
 
 ]

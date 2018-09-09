@@ -287,85 +287,6 @@ def direct_search(name, keywords):
     return data
 
 
-# author :lai lingxin
-@csrf_exempt
-def search_disease(request):
-    if request.method == 'POST':
-        querys = []
-        req_json = json.loads(request.body)
-        disease_list = req_json['params']
-        for item in disease_list:
-            query = "MATCH (d:Disease{{preferredTitle:'{value}'}}) RETURN d".format(value=item)
-            queryGene = "MATCH(g:Gene)-[:CAUSE]->(d:Disease{{preferredTitle:'{value}'}}) RETURN g".format(value=item)
-            queryInheri = "MATCH(d:Disease{{preferredTitle:'{value}'}})-[:OBSERVE]->(i:Inheritance) RETURN i".format(
-                value=item)
-            querys.append(query)
-            querys.append(queryGene)
-            querys.append(queryInheri)
-        # name = request.POST['diseaseName']
-        # print(name)
-        # query="MATCH(d:Disease) where d.preferredTitle='"+name+"' RETURN d"
-        # results=gdb.query(query, data_contents=True)
-        # print(results.graph)
-        res = get_json_res(querys)
-    return res
-
-
-@csrf_exempt
-def search_relate_gene(request):
-    if request.method == 'POST':
-        querys = []
-        req_json = json.loads(request.body)
-        disease_list = req_json['params']
-        for item in disease_list:
-            query = "MATCH(g:Gene)-[:CAUSE]->(d:Disease{{preferredTitle:'{value}'}}) RETURN g".format(value=item)
-            querys.append(query)
-
-    res = get_json_res(querys)
-    return res
-
-
-@csrf_exempt
-def search_inheri(request):
-    if request.method == 'POST':
-        querys = []
-        req_json = json.loads(request.body)
-        disease_list = req_json['params']
-        for item in disease_list:
-            query = "MATCH(d:Disease{{preferredTitle:'{value}'}})-[:OBSERVE]->(i:Inheritance) RETURN i".format(
-                value=item)
-            querys.append(query)
-    res = get_json_res(querys)
-    return res
-
-
-@csrf_exempt
-def search_symptom(request):
-    if request.method == 'POST':
-        querys = []
-        req_json = json.loads(request.body)
-        disease_list = req_json['params']
-        for item in disease_list:
-            query = "MATCH(d:Disease{{preferredTitle:'{value}'}})-[:BEHAVE]->(s:Symptom) RETURN s".format(value=item)
-            querys.append(query)
-        res = get_json_res(querys)
-        return res
-
-
-@csrf_exempt
-def search_similar(request):
-    if request.method == 'POST':
-        querys = []
-        req_json = json.loads(request.body)
-        disease_list = req_json['params']
-        for item in disease_list:
-            query = "MATCH(Disease{preferredTitle:'{value}'})-[:BEHAVE]->(s:Symptom)--(result:Disease) WITH result,count(*) As road WHERE road > 5 RETURN result".format(
-                value=item)
-            querys.append(query)
-        res = get_json_res(querys)
-        return res
-
-
 # 用户输入相关症状关键词，返回与关键词相关的症状所相连的疾病和基因
 @csrf_exempt
 def get_detail(request):
@@ -467,3 +388,173 @@ def node_test(request):
     test = set([node1, node2])
     response = HttpResponse(json.dumps(list(test), cls=MyEncoder))
     return response
+
+
+@csrf_exempt
+def get_top5item(request):
+    req_param = json.loads(str(request.body, encoding='utf-8'))
+    # keywords 为输入的查找关键词
+    mimnumber = req_param['params']
+    gdb = get_db()
+    query = 'MATCH(d:Disease{mimnumber:\'' + mimnumber + '\'})-->(s:Symptom)--(result:Disease) WITH d,result, count(*) AS path order by path desc RETURN d,result,path limit 100'
+    result = gdb.query(q=query, data_contents=True)
+    res_data = []
+    for row in result.rows:
+        item = {"source": row[0], "target": row[1], 'path': row[2]}
+        res_data.append(item)
+    return HttpResponse(json.dumps(res_data))
+
+
+@csrf_exempt
+def init_link_of_disease(request):
+    req_param = json.loads(str(request.body, encoding='utf-8'))
+    # keywords 为输入的查找关键词
+    params = req_param['params']
+    gdb = get_db()
+    query = 'MATCH(source:Disease{mimnumber:\'' + params[0] + '\'})--(path:Symptom)--(target:Disease{mimnumber:\'' + \
+            params[1] + '\'}) return source,path,target'
+    result = gdb.query(q=query, data_contents=True)
+
+    items = []
+    nodes = set()
+    links = set()
+    for row in result.rows:
+        source = Node("disease",
+                      "mimnumber:" + row[0]["mimnumber"] + "</br>" + "prefferred title:" + row[0]["preferredTitle"])
+        symptom = Node("symptom", "symptom:" + row[1]["symptom"])
+        target = Node("disease",
+                      "mimnumber:" + row[2]["mimnumber"] + "</br>" + "prefferred title:" + row[2]["preferredTitle"])
+
+        link1 = Link(source.name, symptom.name, "Behave")
+        link2 = Link(target.name, symptom.name, "Behave")
+        nodes.add(source)
+        nodes.add(symptom)
+        nodes.add(target)
+        links.add(link1)
+        links.add(link2)
+        item = {"source": row[0], "path": row[1], 'target': row[2]}
+        items.append(item)
+    res_data = {'nodes': list(nodes), "links": list(links)}
+
+    response = HttpResponse(json.dumps(res_data, cls=MyEncoder))
+    # response = HttpResponse(json.dumps(items))
+    return response
+
+
+@csrf_exempt
+def get_link_of_disease(request):
+    req_param = json.loads(str(request.body, encoding='utf-8'))
+    # keywords 为输入的查找关键词
+    params = req_param['params']
+    gdb = get_db()
+    items = []
+    nodes = set()
+    links = set()
+
+    for index in range(len(params)):
+        if index == 0:
+            continue
+        query = 'MATCH(source:Disease{mimnumber:\'' + params[0] + '\'})--(path:Symptom)--(target:Disease{mimnumber:\'' + \
+                params[index] + '\'}) return source,path,target'
+        result = gdb.query(q=query, data_contents=True)
+
+        for row in result.rows:
+            source = Node("disease",
+                          "mimnumber:" + row[0]["mimnumber"] + "</br>" + "prefferred title:" + row[0]["preferredTitle"])
+            symptom = Node("symptom", "symptom:" + row[1]["symptom"])
+            target = Node("disease",
+                          "mimnumber:" + row[2]["mimnumber"] + "</br>" + "prefferred title:" + row[2]["preferredTitle"])
+
+            link1 = Link(source.name, symptom.name, "Behave")
+            link2 = Link(target.name, symptom.name, "Behave")
+            nodes.add(source)
+            nodes.add(symptom)
+            nodes.add(target)
+            links.add(link1)
+            links.add(link2)
+            item = {"source": row[0], "path": row[1], 'target': row[2]}
+            items.append(item)
+    res_data = {'nodes': list(nodes), "links": list(links)}
+
+    response = HttpResponse(json.dumps(res_data, cls=MyEncoder))
+    # response = HttpResponse(json.dumps(items))
+    return response
+
+
+# author :lai lingxin
+@csrf_exempt
+def search_disease(request):
+    if request.method == 'POST':
+        querys = []
+        req_json = json.loads(request.body)
+        disease_list = req_json['params']
+        for item in disease_list:
+            query = "MATCH (d:Disease{{preferredTitle:'{value}'}}) RETURN d".format(value=item)
+            queryGene = "MATCH(g:Gene)-[:CAUSE]->(d:Disease{{preferredTitle:'{value}'}}) RETURN g".format(value=item)
+            queryInheri = "MATCH(d:Disease{{preferredTitle:'{value}'}})-[:OBSERVE]->(i:Inheritance) RETURN i".format(
+                value=item)
+            querys.append(query)
+            querys.append(queryGene)
+            querys.append(queryInheri)
+        # name = request.POST['diseaseName']
+        # print(name)
+        # query="MATCH(d:Disease) where d.preferredTitle='"+name+"' RETURN d"
+        # results=gdb.query(query, data_contents=True)
+        # print(results.graph)
+        res = get_json_res(querys)
+    return res
+
+
+@csrf_exempt
+def search_relate_gene(request):
+    if request.method == 'POST':
+        querys = []
+        req_json = json.loads(request.body)
+        disease_list = req_json['params']
+        for item in disease_list:
+            query = "MATCH(g:Gene)-[:CAUSE]->(d:Disease{{preferredTitle:'{value}'}}) RETURN g".format(value=item)
+            querys.append(query)
+
+    res = get_json_res(querys)
+    return res
+
+
+@csrf_exempt
+def search_inheri(request):
+    if request.method == 'POST':
+        querys = []
+        req_json = json.loads(request.body)
+        disease_list = req_json['params']
+        for item in disease_list:
+            query = "MATCH(d:Disease{{preferredTitle:'{value}'}})-[:OBSERVE]->(i:Inheritance) RETURN i".format(
+                value=item)
+            querys.append(query)
+    res = get_json_res(querys)
+    return res
+
+
+@csrf_exempt
+def search_symptom(request):
+    if request.method == 'POST':
+        querys = []
+        req_json = json.loads(request.body)
+        disease_list = req_json['params']
+        for item in disease_list:
+            query = "MATCH(d:Disease{{preferredTitle:'{value}'}})-[:BEHAVE]->(s:Symptom) RETURN s".format(value=item)
+            querys.append(query)
+        res = get_json_res(querys)
+        return res
+
+
+@csrf_exempt
+def search_similar(request):
+    if request.method == 'POST':
+        querys = []
+        req_json = json.loads(request.body)
+        disease_list = req_json['params']
+        for item in disease_list:
+            query = "MATCH(Disease{preferredTitle:'{value}'})-[:BEHAVE]->(s:Symptom)--(result:Disease) WITH result,count(*) As road WHERE road > 5 RETURN result".format(
+                value=item)
+            querys.append(query)
+        res = get_json_res(querys)
+        return res

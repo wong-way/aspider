@@ -38,8 +38,8 @@
 
     <el-row style="margin-top: 15px;" v-show="!loading">
       <el-col :span="22" :offset="1">
-        <el-tabs v-model="activeTab" type="card" @tab-click="handleClick">
-          <el-tab-pane label="信息概览" name="first">
+        <el-tabs v-model="activeTab" type="card">
+          <el-tab-pane label="Information Summary" name="first">
             <el-card  style="margin-top: 15px;" >
               <el-checkbox :indeterminate="isIndeterminatePos" v-model="checkAllPos" @change="handleCheckAllPosChange">Postions</el-checkbox>
               <div style="margin: 15px 0;"></div>
@@ -96,7 +96,7 @@
 
 <script>
 import ResultList from "./result-list";
-import ResultDetail from "./result-detail.vue";
+import ResultInfo from "./result-info.vue";
 import SearchBar from "./tools/search-bar.vue";
 import vueLoading from "vue-loading-template";
 
@@ -104,7 +104,7 @@ export default {
   name: "SearchResult",
   components: {
     "result-list": ResultList,
-    "result-detail": ResultDetail,
+    "result-info": ResultInfo,
     "vue-loading": vueLoading
   },
   data() {
@@ -1111,7 +1111,7 @@ export default {
   },
 
   methods: {
-    search() {
+    doSearch() {
       this.$store.state.search_text = this.search_text;
       this.$store.state.search_type = this.search_type;
       this.loading = true;
@@ -1155,8 +1155,22 @@ export default {
           // this.currentPageData = this.selectedData.slice(0, this.pageSize);
           // this.loading = false;
         });
+        
+   
+    
       this.$route.params.search_text = this.search_text;
       this.$route.params.search_type = this.search_type;
+    },
+    search(){
+         this.$router.push(
+        {
+          name: 'statistics',
+          params: {
+            search_type: this.search_type,
+            search_text: this.search_text
+          }
+        }
+      )
     },
     handleCheckAllPosChange(val) {
       this.checkedPositions = val ? this.positionOptions : [];
@@ -1193,7 +1207,7 @@ export default {
     this.search_text = this.$route.params.search_text;
     this.search_type = this.$route.params.search_type;
 
-    this.search();
+    this.doSearch();
   }
 };
 </script>

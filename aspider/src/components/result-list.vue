@@ -12,17 +12,17 @@
               <strong>Disease: {{item.preferredTitle }}{{item.shorteningTitle=='null'?'':'('+item.shorteningTitle+')'}}</strong>
               <br>
               <i class="el-icon-edit-outline"></i>
-              <strong class="result-title">inheritance:</strong> {{item.inheritance }}
+              <strong class="result-title">Inheritance:</strong> {{item.inheritance }}
               <br>
               <i class="el-icon-view"></i>
-              <strong class="result-title">symptom count:</strong> {{item.symptomCount}}
+              <strong class="result-title">Symptom count:</strong> {{item.symptomCount}}
               <br>
               <i class="el-icon-tickets"></i>
-              <strong class="result-title">main site of disease:</strong>
+              <strong class="result-title">Top5 position:</strong>
               <el-tag size="small" color="white" :hit="true" v-for="(p,index) in item.position">{{p}}</el-tag>
             </div>
-            <el-button type="primary" size="small" icon="el-icon-edit" @click="showDetail(item.mimnumber)">View</el-button>
-            <el-button type="primary" size="small" icon="el-icon-share">Relation</el-button>
+            <el-button type="primary" size="small" icon="el-icon-share" @click="showInfo(item.mimnumber)">Detail</el-button>
+            <el-button type="primary" size="small" icon="el-icon-share" @click="showRelation(item.mimnumber)">Relation</el-button>
           </el-card>
         </el-scrollbar>
       </el-col>
@@ -180,16 +180,25 @@ export default {
       this.currentPageData = this.selectedData.slice(0, this.pageSize);
     }
   },
-  props: ["listdata","posdata"],
+  props: ["listdata", "posdata"],
   methods: {
-    showDetail: function(mim) {
+    showInfo: function(mim) {
       this.$router.push({
-        name: "resultDetail",
+        name: "resultInfo",
         params: {
           mimnumber: mim
         }
       });
     },
+    showRelation: function(mim) {
+      this.$router.push({
+        name: "resultRelation",
+        params: {
+          mimnumber: mim
+        }
+      });
+    },
+
     setCondition: function(event) {
       this.selectedData = [];
       let temp = [];
@@ -197,22 +206,23 @@ export default {
         if (this.inheriOptions.indexOf(element.inheritance) >= 0)
           temp.push(element);
       });
-      console.log(temp.length);
+    
       temp.forEach(element => {
-        let intersection = element.position.filter(v => this.posOptions.includes(v))
-        if (intersection.length>0) {
+        let intersection = element.allPosition.filter(v =>
+          this.posOptions.includes(v)
+        );
+        if (intersection.length > 0) {
           this.selectedData.push(element);
-        }else{
-          console.log(element)
+        } else {
+          console.log(element);
         }
       });
 
-      console.log(this.selectedData.length);
+      
       this.currentPageData = this.selectedData.slice(0, 5);
       this.totalCount = this.selectedData.length;
     },
- 
-    
+
     handleCurrentChange(val) {
       this.currentPageData = this.selectedData.slice(
         (this.currentPage - 1) * this.pageSize,

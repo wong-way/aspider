@@ -127,7 +127,7 @@ def get_disease_list2(request):
     diseases = indirect_search(name, keywords, search_type, depth)
     items = []
     response_data = {}
-
+    gdb = get_db()
     for disease in diseases:
         item = {}
         count = 0
@@ -317,42 +317,60 @@ def links(request):
     response = HttpResponse(json.dumps(data))
     return response
 
+# 间接查询，查询相关的
+def indirect_search(name, keywords, type, depth=2):
+    data = []
+    # 生成Cypher语句，并进行查找
+    gdb = get_db()
+
+    # MARK:: TEST
+
+
+    # 根据关键词生成 CONTAINS 子句
+    phase = 'WHERE '
+    for i, keyword in enumerate(keywords):
+        if i == 0:
+            phase += 'node.' + labels[name].key_prop + ' CONTAINS \'' + keyword + '\''
+        else:
+            phase += ' OR node.' + labels[name].key_prop + ' CONTAINS \'' + keyword + '\''
+
+    # 构造查询语句
+    query = 'MATCH(node:' + labels[name].label + ')' + '-[*1..' + str(
+        depth) + ']-' + '(result:' + type + ') ' + phase + ' RETURN result'
+
+    print(query)
+
+    # -------------在下面这条语句可以设置返回的数据类型，包括是否返回关系等----------------
+    result = gdb.query(q=query, data_contents=True)
+
+
+    if len(result) > 0:
+        # 将查找到的数据整理为 Pandas 的 DataFrame
+        data = [row[0] for row in result.rows]
+
+    return data
+
 
 def direct_search(name, keywords):
-    # 根据关键词生成正则表达式
-    reg = '.*|.*'.join(keywords)
-    reg = '\'.*' + reg + '.*\''
 
     # 生成Cypher语句，并进行查找
     gdb = get_db()
-    query = 'MATCH(node:' + labels[name].label + ') WHERE node.' + labels[name].key_prop + ' =~ ' + reg + ' RETURN node'
+    phase = 'WHERE '
+    for i, keyword in enumerate(keywords):
+        if i == 0:
+            phase += 'node.' + labels[name].key_prop + ' CONTAINS \'' + keyword + '\''
+        else:
+            phase += ' OR node.' + labels[name].key_prop + ' CONTAINS \'' + keyword + '\''
+
+    query = 'MATCH(node:' + labels[name].label + ') ' + phase + ' RETURN node'
+
+
 
     # -------------在下面这条语句可以设置返回的数据类型，包括是否返回关系等----------------
     result = gdb.query(q=query, data_contents=True)
 
     # 将查找到的数据整理为 Pandas 的 DataFrame
     data = [row[0] for row in result.rows]
-    return data
-
-
-# 间接查询，查询相关的
-def indirect_search(name, keywords, type, depth=2):
-    # 根据关键词生成正则表达式
-    reg = '.*|.*'.join(keywords)
-    reg = '\'.*' + reg + '.*\''
-    data = []
-    # 生成Cypher语句，并进行查找
-    gdb = get_db()
-    query = 'MATCH(node:' + labels[name].label + ')' + '-[*1..' + str(
-        depth) + ']-' + '(result:' + type + ')' + ' WHERE node.' + labels[
-                name].key_prop + ' =~ ' + reg + ' RETURN result'
-
-    # -------------在下面这条语句可以设置返回的数据类型，包括是否返回关系等----------------
-    result = gdb.query(q=query, data_contents=True)
-    if len(result) > 0:
-        # 将查找到的数据整理为 Pandas 的 DataFrame
-        data = [row[0] for row in result.rows]
-
     return data
 
 

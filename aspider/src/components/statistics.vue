@@ -35,6 +35,7 @@ export default {
   components: { "vue-loading": vueLoading },
   watch: {
     search_text1(val) {
+      this.search_text = val;
       this.setPie(val);
     },
     search_type1(val){
@@ -80,7 +81,7 @@ export default {
             },
             series: [
               {
-                name: "访问来源",
+                name: "遗传方式",
                 type: "pie",
                 radius: "55%",
                 center: ["50%", "60%"],
